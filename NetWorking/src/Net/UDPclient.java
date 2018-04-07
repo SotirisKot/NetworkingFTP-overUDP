@@ -20,16 +20,15 @@ public class UDPclient{
           fileName = args[1];
           filePath = args[2];
           maxPayload = Integer.parseInt(args[4]);
+          //get a Datagram socket
+          DatagramSocket socket = new DatagramSocket();
+
+          //create a packet to send request
+          byte[] buf = new byte[maxPayload];
+          InetAddress address = InetAddress.getByName(serverIP);
+          DatagramPacket packet = new DatagramPacket(buf, buf.length, address, portNumber);
+          socket.send(packet);
       }
-      //get a Datagram socket
-      DatagramSocket socket = new DatagramSocket();
-
-      //create a packet to send request
-      byte[] buf = new byte[maxPayload];
-      InetAddress address = InetAddress.getByName(serverIP);
-      DatagramPacket packet = new DatagramPacket(buf, buf.length, address, portNumber);
-      socket.send(packet);
-
 
 
   }
