@@ -22,12 +22,18 @@ public class UDPclient{
           maxPayload = Integer.parseInt(args[4]);
           //get a Datagram socket
           DatagramSocket socket = new DatagramSocket();
-
+          String message = "Hello Server";
           //create a packet to send request
-          byte[] buf = new byte[maxPayload];
+          byte[] buf = message.getBytes();
           InetAddress address = InetAddress.getByName(serverIP);
           DatagramPacket packet = new DatagramPacket(buf, buf.length, address, portNumber);
           socket.send(packet);
+
+          //gets a response from the server
+          packet = new DatagramPacket(buf, buf.length);
+          socket.receive(packet);
+          String received = new String(packet.getData(), 0, packet.getLength());
+          System.out.println("Message: " + received);
       }
 
 
