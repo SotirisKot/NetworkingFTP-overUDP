@@ -30,6 +30,8 @@ public class ClientHandler extends Thread{
               e.printStackTrace();
           }
           System.out.println("Got a request!!!");
+          String received = new String(packet.getData(), 0, packet.getLength());
+          System.out.println("Message: " + received);
 
           String message = "Hello Client";
           buf = message.getBytes();

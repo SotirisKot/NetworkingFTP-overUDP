@@ -35,8 +35,6 @@ public class UDPclient{
           String received = new String(packet.getData(), 0, packet.getLength());
           System.out.println("Message: " + received);
       }
-
-
   }
 
   public static void main(String args[]) throws IOException {
