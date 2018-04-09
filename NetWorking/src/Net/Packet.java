@@ -88,7 +88,42 @@ public class Packet {
         return msg;
     }
 
-    public Packet processingData(String packetData){
-        return null;
+    public static Packet processingData(String packetData){
+
+        boolean synPacket;
+        boolean ackPacket;
+        int synNum;
+        int ackNum;
+        String data = "";
+
+        String[] tokens = packetData.split("-");
+        Packet packet = new Packet();
+        for(int i=0; i<tokens.length; i++){
+            String[] eachToken = tokens[i].split("=");
+            switch (eachToken[0]){
+                case "SYN":
+                    packet.setSynPacket(eachToken[1].equals("1"));
+                    break;
+
+                case "ACK":
+                    packet.setAckPacket(eachToken[1].equals("1"));
+                    break;
+
+                case "SYNn":
+                    packet.setSynNum(Integer.parseInt(eachToken[1]));
+                    break;
+
+                case "ACKn":
+                    packet.setAckNum(Integer.parseInt(eachToken[1]));
+                    break;
+
+                case "DATA":
+                    packet.setData(eachToken[1]);
+                    break;
+            }
+        }
+
+
+        return packet;
     }
 }
