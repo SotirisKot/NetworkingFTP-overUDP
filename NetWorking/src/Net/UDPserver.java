@@ -9,7 +9,6 @@ public class UDPserver{
       if(args.length == 2){
         String ServerIP = args[0];
         int portNumber = Integer.parseInt(args[1]);
-        System.out.println(ServerIP + "    " + portNumber);
         ClientHandler clientThread = new ClientHandler(ServerIP,portNumber);
         clientThread.start();
       }else{

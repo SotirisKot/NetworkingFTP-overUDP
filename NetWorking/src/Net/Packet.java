@@ -7,6 +7,7 @@ public class Packet {
     private int synNum;
     private int ackNum;
     private String data;
+    private int sequence_num;
 
     public Packet(){
         this.synPacket = false;
@@ -14,14 +15,20 @@ public class Packet {
         this.synNum = 0;
         this.ackNum = 0;
         this.data = null;
+        this.sequence_num = 0;
     }
 
-    public Packet(boolean synPacket,boolean ackPacket,int synNum,int ackNum,String data){
+    public Packet(boolean synPacket,boolean ackPacket,int synNum,int ackNum,String data,int sequence_num){
         this.synPacket = synPacket;
         this.ackPacket = ackPacket;
         this.synNum = synNum;
         this.ackNum = ackNum;
         this.data = data;
+        this.sequence_num = sequence_num;
+    }
+
+    public int getSequence_num() {
+        return sequence_num;
     }
 
     public boolean getSynPacket() {
@@ -64,6 +71,10 @@ public class Packet {
         this.data = data;
     }
 
+    public void setSequence_num(int sequence_num) {
+        this.sequence_num = sequence_num;
+    }
+
     @Override
     public String toString(){//to send a packet we must convert it to a String first
         int syn,ack;
@@ -81,10 +92,10 @@ public class Packet {
 
         int sNum = synNum;
         int aNum = ackNum;
+        int seq_num = sequence_num;
         String dataT = data;
 
-        String msg = "SYN=" + syn + "-" + "ACK=" + ack + "-" + "SYNn" + sNum + "-" + "ACKn" + aNum + "-" + "DATA" + dataT;
-
+        String msg = "SYN=" + syn + "-" + "ACK=" + ack + "-" + "SYNn=" + sNum + "-" + "ACKn=" + aNum + "-" + "DATA=" + dataT + "-" +"SEQ=" + seq_num + "-";
         return msg;
     }
 
@@ -98,31 +109,29 @@ public class Packet {
 
         String[] tokens = packetData.split("-");
         Packet packet = new Packet();
-        for(int i=0; i<tokens.length; i++){
-            String[] eachToken = tokens[i].split("=");
-            switch (eachToken[0]){
+        for(String eachToken: tokens){
+            String Tokens[] = eachToken.split("=");
+            switch (Tokens[0]){
                 case "SYN":
-                    packet.setSynPacket(eachToken[1].equals("1"));
+                    packet.setSynPacket(Tokens[1].equals("1"));
                     break;
-
                 case "ACK":
-                    packet.setAckPacket(eachToken[1].equals("1"));
+                    packet.setAckPacket(Tokens[1].equals("1"));
                     break;
-
                 case "SYNn":
-                    packet.setSynNum(Integer.parseInt(eachToken[1]));
+                    packet.setSynNum(Integer.parseInt(Tokens[1]));
                     break;
-
                 case "ACKn":
-                    packet.setAckNum(Integer.parseInt(eachToken[1]));
+                    packet.setAckNum(Integer.parseInt(Tokens[1]));
                     break;
-
                 case "DATA":
-                    packet.setData(eachToken[1]);
+                    packet.setData(Tokens[1]);
+                    break;
+                case "SEQ":
+                    packet.setSequence_num(Integer.parseInt(Tokens[1]));
                     break;
             }
         }
-
 
         return packet;
     }

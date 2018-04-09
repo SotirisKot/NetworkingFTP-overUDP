@@ -5,16 +5,18 @@ import java.net.*;
 import java.util.*;
 
 public class UDPclient{
+
   private String serverIP;
   private int portNumber;
   private String fileName;
   private String filePath;
   private int maxPayload;
-  private static int ACK_NUM = 0;
-  private static int SYNC_NUM = 0;
+  private int ACK_NUM = 0;
+  private int SYNC_NUM = 0;
   private InetAddress address;
   private DatagramSocket socket;
   private String state = null;
+  private int sequence_num = 0;
 
   public void initialize(String args[]) throws IOException {
       if(args.length != 5){
@@ -29,20 +31,9 @@ public class UDPclient{
           socket = new DatagramSocket();
           String message = "Hello Server";
           address = InetAddress.getByName(serverIP);
-          //create a packet to send request
-         /* byte[] buf = message.getBytes();
-          InetAddress address = InetAddress.getByName(serverIP);
-          DatagramPacket packet = new DatagramPacket(buf, buf.length, address, portNumber);
-          socket.send(packet);
-
-          //gets a response from the server
-          packet = new DatagramPacket(buf, buf.length);
-          socket.receive(packet);
-          String received = new String(packet.getData(), 0, packet.getLength());
-          System.out.println("Message: " + received);*/
 
           //START MAIN PROCESS
-          /*INITIALIZE THREE WAY HANDSHAKE BY SENDING A SYN PACKET*/
+          /*INITIALIZE 3-WAY HANDSHAKE BY SENDING A SYN PACKET*/
           Packet syncPacket = new Packet();
           syncPacket.setSynPacket(true);
           syncPacket.setSynNum(SYNC_NUM);
@@ -53,35 +44,42 @@ public class UDPclient{
       }
   }
 
-    public void sendData(String data) throws IOException {
+  public void sendData(String data) throws IOException {
         byte[] buffer = data.getBytes();
         DatagramPacket p = new DatagramPacket(buffer,buffer.length,address,portNumber);
         socket.send(p);
-    }
+  }
 
-    private void waitingForInput(String state){
-        Thread t = new Thread(()-> {
-            while(true){
-                byte[] buffer = new byte[maxPayload];
-                DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
-                try {
-                    socket.receive(packet);
-                    Packet p = Packet.processingData(new String(buffer));
-                    System.out.println("Received: " + p.toString());
-                    if(state.equals("sync_sent")){
-
-                    }
-                } catch (IOException e) {
+  private void waitingForInput(String state){
+      Thread t = new Thread(()-> {
+          while(true){
+              byte[] buffer = new byte[maxPayload];
+              DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
+              try {
+                  socket.receive(packet);
+                  Packet p = Packet.processingData(new String(buffer));
+                  System.out.println("Received: " + p.toString());
+                  if(state.equals("sync_sent")){
+                      if(p.getAckNum() == SYNC_NUM){//ack packet must be valid!!!
+                          System.out.println("3-way handshake step 2...Now will send ack back to server to establish" +
+                                  " connection!!!");
+                          Packet ackPacket = new Packet();
+                          ackPacket.setAckPacket(true);
+                          ackPacket.setAckNum(p.getSynNum());
+                          sendData(ackPacket.toString());
+                          System.out.println("3-way handshake finished...connection established.");
+                      }
+                  }
+              } catch (IOException e) {
                     e.printStackTrace();
-                }
+              }
 
-            }
-        });
-        t.start();
+          }
+      });
+      t.start();
+  }
 
-    }
-
-    public static void main(String args[]) throws IOException {
+  public static void main(String args[]) throws IOException {
       new UDPclient().initialize(args);
   }
 
