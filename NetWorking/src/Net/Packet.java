@@ -4,6 +4,7 @@ public class Packet {
 
     private boolean synPacket;
     private boolean ackPacket;
+    private boolean dataPacket;
     private int synNum;
     private int ackNum;
     private String data;
@@ -16,15 +17,21 @@ public class Packet {
         this.ackNum = 0;
         this.data = null;
         this.sequence_num = 0;
+        this.dataPacket = false;
     }
 
-    public Packet(boolean synPacket,boolean ackPacket,int synNum,int ackNum,String data,int sequence_num){
+    public Packet(boolean synPacket,boolean ackPacket,int synNum,int ackNum,String data,int sequence_num,boolean dataPacket){
         this.synPacket = synPacket;
         this.ackPacket = ackPacket;
         this.synNum = synNum;
         this.ackNum = ackNum;
         this.data = data;
         this.sequence_num = sequence_num;
+        this.dataPacket = dataPacket;
+    }
+
+    public boolean isDataPacket() {
+        return dataPacket;
     }
 
     public int getSequence_num() {
@@ -75,9 +82,13 @@ public class Packet {
         this.sequence_num = sequence_num;
     }
 
+    public void setDataPacket(boolean dataPacket) {
+        this.dataPacket = dataPacket;
+    }
+
     @Override
     public String toString(){//to send a packet we must convert it to a String first
-        int syn,ack;
+        int syn,ack,dataN;
         if(synPacket){
             syn = 1;
         }else{
@@ -90,12 +101,19 @@ public class Packet {
             ack = 0;
         }
 
+        if(dataPacket){
+            dataN=1;
+        }else{
+            dataN = 0;
+        }
+
         int sNum = synNum;
         int aNum = ackNum;
         int seq_num = sequence_num;
         String dataT = data;
 
-        String msg = "SYN=" + syn + "-" + "ACK=" + ack + "-" + "SYNn=" + sNum + "-" + "ACKn=" + aNum + "-" + "DATA=" + dataT + "-" +"SEQ=" + seq_num + "-";
+        String msg = "SYN=" + syn + "-" + "ACK=" + ack + "-" + "SYNn=" + sNum + "-" + "ACKn=" + aNum + "-" + "DATA=" +
+                dataT + "-" +"SEQ=" + seq_num + "-" + "Dpacket=" + dataN + "-";
         return msg;
     }
 
@@ -129,6 +147,10 @@ public class Packet {
                     break;
                 case "SEQ":
                     packet.setSequence_num(Integer.parseInt(Tokens[1]));
+                    break;
+                case "Dpacket":
+                    packet.setDataPacket(Tokens[1].equals("1"));
+                    System.out.println(Tokens[1]);
                     break;
             }
         }
