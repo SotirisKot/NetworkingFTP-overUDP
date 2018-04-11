@@ -62,14 +62,11 @@ public class ClientHandler extends Thread{
                       byte[] buffer = Files.readAllBytes(path);
 
                       //now must send an ack..to tell the client that we received the file request.
-                      /* TODO */
-
-                      //afou steilei to ack apla 3ekinaei na stelnei to file se paketa.Me sequence_num = 1
-
-                      /* TODO */
-
+                      sendAck(p.getSequence_num(),clientAddress,clientPort);
+                      sequence_num++;
                   }
-
+                  /* TODO na arxisw na stelnw to file*/
+                  
               }
           } catch (IOException e) {
               e.printStackTrace();
@@ -77,19 +74,25 @@ public class ClientHandler extends Thread{
       }
   }
 
+  public void sendAck(int ackNum,InetAddress address,int clientPort) throws IOException {
+      Packet ack = new Packet();
+      ack.setAckPacket(true);
+      ack.setAckNum(ackNum);
+      sendData(ack.toString(),address,clientPort);
+  }
     //apla koimatai gia 5 sec kai kanontas join perimenw na teleiwsei kai meta kanw return true.
-    public boolean timeout(int seconds) throws InterruptedException {
-        Thread t1 = new Thread(()->{
-            try {
-                Thread.sleep(seconds*1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
-        t1.start();
-        t1.join();
-        return true;
-    }
+  public boolean timeout(int seconds) throws InterruptedException {
+      Thread t1 = new Thread(()->{
+          try {
+              Thread.sleep(seconds*1000);
+          }catch (InterruptedException e) {
+              e.printStackTrace();
+          }
+      });
+      t1.start();
+      t1.join();
+      return true;
+  }
 
   public void sendData(String data,InetAddress address,int clientPort) throws IOException {
       byte[] buffer = data.getBytes();

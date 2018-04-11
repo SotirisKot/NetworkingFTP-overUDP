@@ -43,30 +43,27 @@ public class UDPclient{
       }
   }
 
-  public void sendData(String data) throws IOException {
-        byte[] buffer = data.getBytes();
-        DatagramPacket p = new DatagramPacket(buffer,buffer.length,address,portNumber);
-        socket.send(p);
-  }
+
 
   private void communicationHandler(String state){
+
       Thread t = new Thread(()-> {
           String stateN = state;
+          boolean asked = true;
           while(true){
               byte[] buffer = new byte[maxPayload];
               DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
               if(stateN.equals("sync_sent")){
                   try {
+                      //byte[] buffer = new byte[maxPayload];
+                      //DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
                       socket.receive(packet);
                       Packet p = Packet.processingData(new String(buffer));
                       System.out.println("Received: " + p.toString());
                       if(p.getAckNum() == SYNC_NUM){//ack packet must be valid!!!
                           System.out.println("3-way handshake step 2...Now will send ack back to server to establish" +
                                   " connection!!!");
-                          Packet ackPacket = new Packet();
-                          ackPacket.setAckPacket(true);
-                          ackPacket.setAckNum(p.getSynNum());
-                          sendData(ackPacket.toString());
+                          sendAck(p.getSynNum());
                           System.out.println("3-way handshake finished...connection established.");
                           stateN = "connection_established";
                       }
@@ -75,44 +72,48 @@ public class UDPclient{
                   }
               }else if(stateN.equals("connection_established")){
                   //asking the server to send me the file
-                  Packet req = new Packet();
-                  req.setDataPacket(true);
-                  req.setData(filePath);
-                  req.setSequence_num(sequence_num);
-                  try {
-                      //after sending the request...must wait for an ack...or else if time runs out..sending again.
-
-                      sendData(req.toString());
-                      while (!timeout(5)){//trexei to thread kai meta apo 5 sec bgainei apo to loop.
-                         socket.receive(packet);
-
-                         //an labei to ack me acknum=sequence_num=0 tote eimaste komple kai apla perimenei
-                          //na tou er8ei to prwto paketo apo to file me sequence_num = 1.
+                  if(asked){
+                      Packet req = new Packet();
+                      req.setDataPacket(true);
+                      req.setData(filePath);
+                      req.setSequence_num(sequence_num);
+                      boolean received = false;
+                      while(!received){
+                          try {
+                              sendData(req.toString());
+                              socket.setSoTimeout(5000);
+                              socket.receive(packet);
+                              Packet p = Packet.processingData(new String(buffer));
+                              if(p.getAckPacket() && p.getAckNum() == sequence_num){
+                                  received = true;
+                                  sequence_num++;
+                                  System.out.println("Request delivered");
+                                  break;
+                              }
+                          } catch (IOException e) {
+                              System.out.println("Timed out...must send packet again!!!");
+                          }
                       }
-                      System.out.println("timed out");
-                  } catch (IOException | InterruptedException e) {
-                      e.printStackTrace();
+                      asked = false;
+                      System.out.println("Ready to accept file!!!");
                   }
-
-
               }
           }
       });
       t.start();
   }
 
-  //apla koimatai gia 5 sec kai kanontas join perimenw na teleiwsei kai meta kanw return true.
-  public boolean timeout(int seconds) throws InterruptedException {
-      Thread t1 = new Thread(()->{
-          try {
-              Thread.sleep(seconds*1000);
-          } catch (InterruptedException e) {
-              e.printStackTrace();
-          }
-      });
-      t1.start();
-      t1.join();
-      return true;
+  public void sendAck(int ackNum) throws IOException {
+      Packet ack = new Packet();
+      ack.setAckPacket(true);
+      ack.setAckNum(ackNum);
+      sendData(ack.toString());
+  }
+
+  public void sendData(String data) throws IOException {
+      byte[] buffer = data.getBytes();
+      DatagramPacket p = new DatagramPacket(buffer,buffer.length,address,portNumber);
+      socket.send(p);
   }
 
   public static void main(String args[]) throws IOException {

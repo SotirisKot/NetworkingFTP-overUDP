@@ -150,7 +150,6 @@ public class Packet {
                     break;
                 case "Dpacket":
                     packet.setDataPacket(Tokens[1].equals("1"));
-                    System.out.println(Tokens[1]);
                     break;
             }
         }
