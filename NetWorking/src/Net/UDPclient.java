@@ -19,8 +19,32 @@ public class UDPclient{
   private int sequence_num = 0;
 
   public void initialize(String args[]) throws IOException {
-      if(args.length != 5){
+      if(args.length == 0){
           System.out.println("Wrong Arguments!!!");
+          BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+          System.out.println("Give server ip: ");
+          serverIP = br.readLine();
+          System.out.println("Give Port number: ");
+          portNumber = Integer.parseInt(br.readLine());
+          System.out.println("Give file name");
+          fileName = br.readLine();
+          System.out.println("Give file path");
+          filePath = br.readLine();
+          System.out.println("Give payload");
+          maxPayload = Integer.parseInt(br.readLine());
+
+          socket = new DatagramSocket();
+          address = InetAddress.getByName(serverIP);
+          System.out.println(fileName + "   " + filePath);
+          //START MAIN PROCESS
+          /*INITIALIZE 3-WAY HANDSHAKE BY SENDING A SYN PACKET*/
+          Packet syncPacket = new Packet();
+          syncPacket.setSynPacket(true);
+          syncPacket.setSynNum(SYNC_NUM);
+          sendData(syncPacket.toString());
+          System.out.println("3-way handshake initialized.");
+          state = "sync_sent";
+          communicationHandler(state);
       }else{
           serverIP = args[0];
           portNumber = Integer.parseInt(args[1]);
