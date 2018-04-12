@@ -15,6 +15,7 @@ public class ClientHandler extends Thread{
   private String ServerIP;
   private String state = "none";
   private int SYNC_NUM = 0,sequence_num=0;
+  private int maxPayload = 65000;
 
   public ClientHandler(String ServerIP,int portNumber){
     this.ServerIP = ServerIP;
@@ -28,19 +29,19 @@ public class ClientHandler extends Thread{
           e.printStackTrace();
       }
       while(true){
-          byte[] buf = new byte[65000];
+          byte[] buf = new byte[maxPayload];
           DatagramPacket packet = new DatagramPacket(buf, buf.length);
           System.out.println("Waiting for a request!!!");
           try {
               socket.receive(packet);
               System.out.println("Got a request!!!");
-              Packet p = Packet.processingData(new String(buf));
+              Packet p = Packet.processingData(new String(buf),maxPayload);
               InetAddress clientAddress = packet.getAddress();
               int clientPort = packet.getPort();
               if(state.equals("none")){//we wait for a syn packet..to start the handshake...
                   if(p.getSynPacket()){
                       System.out.println("Client initialized 3-way handshake!!!");
-                      Packet response = new Packet();
+                      Packet response = new Packet(maxPayload);
                       response.setSynPacket(true);
                       response.setAckPacket(true);
                       response.setSynNum(SYNC_NUM);
@@ -60,13 +61,15 @@ public class ClientHandler extends Thread{
                       String filepath = p.getData();
                       Path path = Paths.get(filepath);
                       byte[] buffer = Files.readAllBytes(path);
-
                       //now must send an ack..to tell the client that we received the file request.
                       sendAck(p.getSequence_num(),clientAddress,clientPort);
                       sequence_num++;
+                      try {
+                          transferFile(buffer,clientAddress,clientPort);
+                      } catch (IOException e) {
+                          e.printStackTrace();
+                      }
                   }
-                  /* TODO na arxisw na stelnw to file*/
-                  
               }
           } catch (IOException e) {
               e.printStackTrace();
@@ -74,28 +77,68 @@ public class ClientHandler extends Thread{
       }
   }
 
+  
+  public void transferFile(byte[] buffer, InetAddress address, int clientPort) throws IOException {
+      ByteArrayOutputStream stream = new ByteArrayOutputStream();
+      DataOutputStream out = new DataOutputStream(stream);
+      String state = "packet_send";
+      int load = maxPayload-8;
+      boolean send_again = true;
+      int start=0;
+      int end = load;
+      while (true){
+          if(state.equals("packet_send")){
+              if(!send_again){//DEN DOULEUEI AFTOOO....META PAEI TO MEGETHOS PAKETOU STA 130000 GIA KAPOIO LOGO.
+                  start = end;
+                  end = end + load;
+              }
+              out.writeInt(sequence_num);
+              out.writeInt(load);
+              out.write(buffer,start,end);
+              out.flush();
+              byte[] buf = stream.toByteArray();
+              DatagramPacket packet = new DatagramPacket(buf,buf.length,address,clientPort);
+              socket.send(packet);
+              state="wait_ack";
+          }else if(state.equals("wait_ack")){
+              byte[] bufferReceive = new byte[maxPayload];
+              DatagramPacket packet = new DatagramPacket(bufferReceive,bufferReceive.length);
+              try{
+                  socket.setSoTimeout(5000);
+                  socket.receive(packet);
+                  Packet p = Packet.processingData(new String(buffer),maxPayload);
+                  if(p.getAckPacket() && p.getAckNum() == sequence_num){
+                      if(sequence_num == 1){
+                          sequence_num--;
+                      }else if(sequence_num == 0){
+                          sequence_num++;
+                      }
+                      System.out.println("Received ack");
+                      state="packet_send";
+                      send_again = false;
+                  }
+              }catch (IOException e){
+                  System.out.println("Timed out...must send packet again!!!");
+                  state="packet_send";
+                  send_again = true;
+              }
+          }
+      }
+
+  }
+
+
   public void sendAck(int ackNum,InetAddress address,int clientPort) throws IOException {
-      Packet ack = new Packet();
+      Packet ack = new Packet(maxPayload);
       ack.setAckPacket(true);
       ack.setAckNum(ackNum);
       sendData(ack.toString(),address,clientPort);
   }
-    //apla koimatai gia 5 sec kai kanontas join perimenw na teleiwsei kai meta kanw return true.
-  public boolean timeout(int seconds) throws InterruptedException {
-      Thread t1 = new Thread(()->{
-          try {
-              Thread.sleep(seconds*1000);
-          }catch (InterruptedException e) {
-              e.printStackTrace();
-          }
-      });
-      t1.start();
-      t1.join();
-      return true;
-  }
 
+  
   public void sendData(String data,InetAddress address,int clientPort) throws IOException {
       byte[] buffer = data.getBytes();
+      //System.out.println(buffer.length);
       DatagramPacket p = new DatagramPacket(buffer,buffer.length,address,clientPort);
       socket.send(p);
   }

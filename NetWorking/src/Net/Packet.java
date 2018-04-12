@@ -9,8 +9,9 @@ public class Packet {
     private int ackNum;
     private String data;
     private int sequence_num;
+    private int maxPayload;
 
-    public Packet(){
+    public Packet(int maxPayload){
         this.synPacket = false;
         this.ackPacket = false;
         this.synNum = 0;
@@ -18,9 +19,12 @@ public class Packet {
         this.data = null;
         this.sequence_num = 0;
         this.dataPacket = false;
+        this.maxPayload = maxPayload;
     }
 
-    public Packet(boolean synPacket,boolean ackPacket,int synNum,int ackNum,String data,int sequence_num,boolean dataPacket){
+    public Packet(boolean synPacket,boolean ackPacket,int synNum,int ackNum,String data,int sequence_num,
+                  boolean dataPacket,int maxPayload){
+
         this.synPacket = synPacket;
         this.ackPacket = ackPacket;
         this.synNum = synNum;
@@ -28,6 +32,7 @@ public class Packet {
         this.data = data;
         this.sequence_num = sequence_num;
         this.dataPacket = dataPacket;
+        this.maxPayload = maxPayload;
     }
 
     public boolean isDataPacket() {
@@ -57,6 +62,38 @@ public class Packet {
     public String getData() {
         return data;
     }
+
+    public int getAvailablePayload(){
+        int syn,ack,dataN;
+        if(synPacket){
+            syn = 1;
+        }else{
+            syn = 0;
+        }
+
+        if(ackPacket){
+            ack = 1;
+        }else{
+            ack = 0;
+        }
+
+        if(dataPacket){
+            dataN=1;
+        }else{
+            dataN = 0;
+        }
+
+        int sNum = synNum;
+        int aNum = ackNum;
+        int seq_num = sequence_num;
+
+        String msg = "SYN=" + syn + "-" + "ACK=" + ack + "-" + "SYNn=" + sNum + "-" + "ACKn=" + aNum + "-" + "SEQ=" + seq_num +
+                "-" + "Dpacket=" + dataN + "-";
+        byte[] taken = msg.getBytes();
+        int availablePayload = maxPayload - taken.length;
+        return availablePayload;
+    }
+
 
     public void setAckPacket(boolean ackPacket) {
         this.ackPacket = ackPacket;
@@ -112,12 +149,12 @@ public class Packet {
         int seq_num = sequence_num;
         String dataT = data;
 
-        String msg = "SYN=" + syn + "-" + "ACK=" + ack + "-" + "SYNn=" + sNum + "-" + "ACKn=" + aNum + "-" + "DATA=" +
-                dataT + "-" +"SEQ=" + seq_num + "-" + "Dpacket=" + dataN + "-";
+        String msg = "SYN=" + syn + "-" + "ACK=" + ack + "-" + "SYNn=" + sNum + "-" + "ACKn=" + aNum + "-" + "SEQ=" + seq_num +
+                "-" + "Dpacket=" + dataN + "-"+ "DATA=" + dataT + "-";
         return msg;
     }
 
-    public static Packet processingData(String packetData){
+    public static Packet processingData(String packetData,int maxPayload){
 
         boolean synPacket;
         boolean ackPacket;
@@ -126,7 +163,7 @@ public class Packet {
         String data = "";
 
         String[] tokens = packetData.split("-");
-        Packet packet = new Packet();
+        Packet packet = new Packet(maxPayload);
         for(String eachToken: tokens){
             String Tokens[] = eachToken.split("=");
             switch (Tokens[0]){

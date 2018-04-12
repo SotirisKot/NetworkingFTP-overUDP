@@ -38,7 +38,7 @@ public class UDPclient{
           System.out.println(fileName + "   " + filePath);
           //START MAIN PROCESS
           /*INITIALIZE 3-WAY HANDSHAKE BY SENDING A SYN PACKET*/
-          Packet syncPacket = new Packet();
+          Packet syncPacket = new Packet(maxPayload);
           syncPacket.setSynPacket(true);
           syncPacket.setSynNum(SYNC_NUM);
           sendData(syncPacket.toString());
@@ -57,23 +57,27 @@ public class UDPclient{
           System.out.println(fileName + "   " + filePath);
           //START MAIN PROCESS
           /*INITIALIZE 3-WAY HANDSHAKE BY SENDING A SYN PACKET*/
-          Packet syncPacket = new Packet();
+          Packet syncPacket = new Packet(maxPayload);
           syncPacket.setSynPacket(true);
           syncPacket.setSynNum(SYNC_NUM);
           sendData(syncPacket.toString());
           System.out.println("3-way handshake initialized.");
           state = "sync_sent";
+
           communicationHandler(state);
       }
   }
 
-
-
   private void communicationHandler(String state){
-
       Thread t = new Thread(()-> {
           String stateN = state;
           boolean asked = true;
+          FileOutputStream file = null;
+          try {
+              file = new FileOutputStream("FTPresult");
+          } catch (FileNotFoundException e) {
+              e.printStackTrace();
+          }
           while(true){
               byte[] buffer = new byte[maxPayload];
               DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
@@ -82,7 +86,7 @@ public class UDPclient{
                       //byte[] buffer = new byte[maxPayload];
                       //DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
                       socket.receive(packet);
-                      Packet p = Packet.processingData(new String(buffer));
+                      Packet p = Packet.processingData(new String(buffer),maxPayload);
                       System.out.println("Received: " + p.toString());
                       if(p.getAckNum() == SYNC_NUM){//ack packet must be valid!!!
                           System.out.println("3-way handshake step 2...Now will send ack back to server to establish" +
@@ -97,7 +101,7 @@ public class UDPclient{
               }else if(stateN.equals("connection_established")){
                   //asking the server to send me the file
                   if(asked){
-                      Packet req = new Packet();
+                      Packet req = new Packet(maxPayload);
                       req.setDataPacket(true);
                       req.setData(filePath);
                       req.setSequence_num(sequence_num);
@@ -107,7 +111,7 @@ public class UDPclient{
                               sendData(req.toString());
                               socket.setSoTimeout(5000);
                               socket.receive(packet);
-                              Packet p = Packet.processingData(new String(buffer));
+                              Packet p = Packet.processingData(new String(buffer),maxPayload);
                               if(p.getAckPacket() && p.getAckNum() == sequence_num){
                                   received = true;
                                   sequence_num++;
@@ -120,15 +124,39 @@ public class UDPclient{
                       }
                       asked = false;
                       System.out.println("Ready to accept file!!!");
+                  }else{
+                      try {
+                          socket.receive(packet);
+                          System.out.println("Received a packet...must send ack!!!");
+                          ByteArrayInputStream inputStream = new ByteArrayInputStream(packet.getData());
+                          DataInputStream in = new DataInputStream(inputStream);
+                          int sequence_number = in.readInt();
+                          if(sequence_number == sequence_num){
+                              int packetLength = in.readInt();
+                              byte[] data = new byte[packetLength];
+                              in.read(data);
+                              file.write(data);
+                              /*TODO NA GIRNAEI ACK KLP*/
+                          }
+                      } catch (IOException e) {
+                          e.printStackTrace();
+
+                      }
+
                   }
               }
           }
+          /*try {
+              file.close();
+          } catch (IOException e) {
+              e.printStackTrace();
+          }*/
       });
       t.start();
   }
 
   public void sendAck(int ackNum) throws IOException {
-      Packet ack = new Packet();
+      Packet ack = new Packet(maxPayload);
       ack.setAckPacket(true);
       ack.setAckNum(ackNum);
       sendData(ack.toString());
