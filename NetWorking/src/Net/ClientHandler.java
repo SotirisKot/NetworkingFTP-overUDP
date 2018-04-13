@@ -35,13 +35,13 @@ public class ClientHandler extends Thread{
           try {
               socket.receive(packet);
               System.out.println("Got a request!!!");
-              Packet p = Packet.processingData(new String(buf),maxPayload);
+              Packet p = Packet.processingData(new String(buf));
               InetAddress clientAddress = packet.getAddress();
               int clientPort = packet.getPort();
               if(state.equals("none")){//we wait for a syn packet..to start the handshake...
                   if(p.getSynPacket()){
                       System.out.println("Client initialized 3-way handshake!!!");
-                      Packet response = new Packet(maxPayload);
+                      Packet response = new Packet();
                       response.setSynPacket(true);
                       response.setAckPacket(true);
                       response.setSynNum(SYNC_NUM);
@@ -65,6 +65,7 @@ public class ClientHandler extends Thread{
                       sendAck(p.getSequence_num(),clientAddress,clientPort);
                       sequence_num++;
                       try {
+                          System.out.println("Starting transferring file!!!");
                           transferFile(buffer,clientAddress,clientPort);
                       } catch (IOException e) {
                           e.printStackTrace();
@@ -77,36 +78,42 @@ public class ClientHandler extends Thread{
       }
   }
 
-  
+
   public void transferFile(byte[] buffer, InetAddress address, int clientPort) throws IOException {
-      ByteArrayOutputStream stream = new ByteArrayOutputStream();
-      DataOutputStream out = new DataOutputStream(stream);
       String state = "packet_send";
       int load = maxPayload-8;
       boolean send_again = true;
       int start=0;
       int end = load;
       while (true){
+          ByteArrayOutputStream stream = new ByteArrayOutputStream();
+          DataOutputStream out = new DataOutputStream(stream);
           if(state.equals("packet_send")){
-              if(!send_again){//DEN DOULEUEI AFTOOO....META PAEI TO MEGETHOS PAKETOU STA 130000 GIA KAPOIO LOGO.
-                  start = end;
-                  end = end + load;
+              byte[] sendBuf = new byte[load];
+              for(int i=0; i<sendBuf.length; i++){
+                  sendBuf[i] = buffer[start];
+                  start++;
               }
               out.writeInt(sequence_num);
               out.writeInt(load);
-              out.write(buffer,start,end);
+              out.write(sendBuf);
               out.flush();
               byte[] buf = stream.toByteArray();
+              System.out.println(buf.length);
               DatagramPacket packet = new DatagramPacket(buf,buf.length,address,clientPort);
               socket.send(packet);
+              System.out.println(state);
               state="wait_ack";
+              out.close();
+              stream.close();
           }else if(state.equals("wait_ack")){
+              System.out.println(state);
               byte[] bufferReceive = new byte[maxPayload];
               DatagramPacket packet = new DatagramPacket(bufferReceive,bufferReceive.length);
               try{
                   socket.setSoTimeout(5000);
                   socket.receive(packet);
-                  Packet p = Packet.processingData(new String(buffer),maxPayload);
+                  Packet p = Packet.processingData(new String(bufferReceive));
                   if(p.getAckPacket() && p.getAckNum() == sequence_num){
                       if(sequence_num == 1){
                           sequence_num--;
@@ -129,7 +136,7 @@ public class ClientHandler extends Thread{
 
 
   public void sendAck(int ackNum,InetAddress address,int clientPort) throws IOException {
-      Packet ack = new Packet(maxPayload);
+      Packet ack = new Packet();
       ack.setAckPacket(true);
       ack.setAckNum(ackNum);
       sendData(ack.toString(),address,clientPort);

@@ -38,7 +38,7 @@ public class UDPclient{
           System.out.println(fileName + "   " + filePath);
           //START MAIN PROCESS
           /*INITIALIZE 3-WAY HANDSHAKE BY SENDING A SYN PACKET*/
-          Packet syncPacket = new Packet(maxPayload);
+          Packet syncPacket = new Packet();
           syncPacket.setSynPacket(true);
           syncPacket.setSynNum(SYNC_NUM);
           sendData(syncPacket.toString());
@@ -57,7 +57,7 @@ public class UDPclient{
           System.out.println(fileName + "   " + filePath);
           //START MAIN PROCESS
           /*INITIALIZE 3-WAY HANDSHAKE BY SENDING A SYN PACKET*/
-          Packet syncPacket = new Packet(maxPayload);
+          Packet syncPacket = new Packet();
           syncPacket.setSynPacket(true);
           syncPacket.setSynNum(SYNC_NUM);
           sendData(syncPacket.toString());
@@ -86,7 +86,7 @@ public class UDPclient{
                       //byte[] buffer = new byte[maxPayload];
                       //DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
                       socket.receive(packet);
-                      Packet p = Packet.processingData(new String(buffer),maxPayload);
+                      Packet p = Packet.processingData(new String(buffer));
                       System.out.println("Received: " + p.toString());
                       if(p.getAckNum() == SYNC_NUM){//ack packet must be valid!!!
                           System.out.println("3-way handshake step 2...Now will send ack back to server to establish" +
@@ -101,7 +101,7 @@ public class UDPclient{
               }else if(stateN.equals("connection_established")){
                   //asking the server to send me the file
                   if(asked){
-                      Packet req = new Packet(maxPayload);
+                      Packet req = new Packet();
                       req.setDataPacket(true);
                       req.setData(filePath);
                       req.setSequence_num(sequence_num);
@@ -111,7 +111,7 @@ public class UDPclient{
                               sendData(req.toString());
                               socket.setSoTimeout(5000);
                               socket.receive(packet);
-                              Packet p = Packet.processingData(new String(buffer),maxPayload);
+                              Packet p = Packet.processingData(new String(buffer));
                               if(p.getAckPacket() && p.getAckNum() == sequence_num){
                                   received = true;
                                   sequence_num++;
@@ -136,7 +136,15 @@ public class UDPclient{
                               byte[] data = new byte[packetLength];
                               in.read(data);
                               file.write(data);
-                              /*TODO NA GIRNAEI ACK KLP*/
+                              sendAck(sequence_number);
+                              if(sequence_num == 1){
+                                  sequence_num--;
+                              }else if(sequence_num == 0){
+                                  sequence_num++;
+                              }
+                          }else{
+                              System.out.println("Packet is a duplicate...just send ack!!!");
+                              sendAck(sequence_number);
                           }
                       } catch (IOException e) {
                           e.printStackTrace();
@@ -156,9 +164,10 @@ public class UDPclient{
   }
 
   public void sendAck(int ackNum) throws IOException {
-      Packet ack = new Packet(maxPayload);
+      Packet ack = new Packet();
       ack.setAckPacket(true);
       ack.setAckNum(ackNum);
+      System.out.println(ack.toString());
       sendData(ack.toString());
   }
 
