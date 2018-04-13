@@ -59,6 +59,7 @@ public class ClientHandler extends Thread{
                   //if packet is valid..opening the file and converting it to byte array so we can send it to client.
                   if(p.isDataPacket() && p.getSequence_num() == sequence_num){//packet is valid
                       String filepath = p.getData();
+                      System.out.println(filepath);
                       Path path = Paths.get(filepath);
                       byte[] buffer = Files.readAllBytes(path);
                       //now must send an ack..to tell the client that we received the file request.
@@ -67,6 +68,7 @@ public class ClientHandler extends Thread{
                       try {
                           System.out.println("Starting transferring file!!!");
                           transferFile(buffer,clientAddress,clientPort);
+                          System.out.println("File has been transferred");
                       } catch (IOException e) {
                           e.printStackTrace();
                       }
@@ -82,10 +84,10 @@ public class ClientHandler extends Thread{
   public void transferFile(byte[] buffer, InetAddress address, int clientPort) throws IOException {
       String state = "packet_send";
       int load = maxPayload-8;
-      boolean send_again = true;
+      boolean image_sent = false;
       int start=0;
       int end = load;
-      while (true){
+      while (!image_sent){
           ByteArrayOutputStream stream = new ByteArrayOutputStream();
           DataOutputStream out = new DataOutputStream(stream);
           if(state.equals("packet_send")){
@@ -93,13 +95,17 @@ public class ClientHandler extends Thread{
               for(int i=0; i<sendBuf.length; i++){
                   sendBuf[i] = buffer[start];
                   start++;
+                  if(start == buffer.length){
+                      System.out.println(start);
+                      image_sent = true;
+                      break;
+                  }
               }
               out.writeInt(sequence_num);
               out.writeInt(load);
               out.write(sendBuf);
               out.flush();
               byte[] buf = stream.toByteArray();
-              System.out.println(buf.length);
               DatagramPacket packet = new DatagramPacket(buf,buf.length,address,clientPort);
               socket.send(packet);
               System.out.println(state);
@@ -122,12 +128,10 @@ public class ClientHandler extends Thread{
                       }
                       System.out.println("Received ack");
                       state="packet_send";
-                      send_again = false;
                   }
               }catch (IOException e){
                   System.out.println("Timed out...must send packet again!!!");
                   state="packet_send";
-                  send_again = true;
               }
           }
       }
@@ -145,7 +149,6 @@ public class ClientHandler extends Thread{
   
   public void sendData(String data,InetAddress address,int clientPort) throws IOException {
       byte[] buffer = data.getBytes();
-      //System.out.println(buffer.length);
       DatagramPacket p = new DatagramPacket(buffer,buffer.length,address,clientPort);
       socket.send(p);
   }
