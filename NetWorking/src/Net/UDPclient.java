@@ -126,6 +126,7 @@ public class UDPclient{
                       System.out.println("Ready to accept file!!!");
                   }else{
                       try {
+                          long startTime = System.nanoTime();
                           socket.setSoTimeout(0);
                           socket.receive(packet);
                           PacketCounter++;
@@ -146,7 +147,6 @@ public class UDPclient{
                               }
                           }else if(sequence_number==2){
                               System.out.println("File has been transferred!!");
-                              System.out.println("Total number of packets received: "+ PacketCounter);
                               int packetLength = in.readInt();
                               byte[] data = new byte[packetLength];
                               in.read(data);
@@ -156,6 +156,8 @@ public class UDPclient{
                               in.close();
                               inputStream.close();
                               file.close();
+                              long endTime = System.nanoTime();
+                              getStatistics(startTime,endTime,PacketCounter,maxPayload);
                           }else{
                               System.out.println("Packet is a duplicate...just send ack!!!");
                               System.out.println(sequence_number);
@@ -186,6 +188,16 @@ public class UDPclient{
       DatagramPacket p = new DatagramPacket(buffer,buffer.length,address,portNumber);
       socket.send(p);
   }
+
+  public void getStatistics(long startTime,long endTime,int PacketCounter,int maxPayload){
+      long totalTime = endTime - startTime;
+      double transfer_rate = ((PacketCounter*maxPayload)/1000)/60;
+      System.out.println("Total transfer rate: " + totalTime + " nanoseconds");
+      System.out.println("Transfer rate: " + transfer_rate + " Kbyte/sec");
+      System.out.println("Total number of UDP/IP packets received: " + PacketCounter);
+      System.out.println("The payload was: "+ maxPayload);
+  }
+
 
   public static void main(String args[]) throws IOException {
       new UDPclient().initialize(args);
