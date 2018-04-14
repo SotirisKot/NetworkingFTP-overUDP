@@ -11,7 +11,6 @@ public class UDPclient{
   private String fileName;
   private String filePath;
   private int maxPayload;
-  private int ACK_NUM = 0;
   private int SYNC_NUM = 0;
   private InetAddress address;
   private DatagramSocket socket;
@@ -63,7 +62,6 @@ public class UDPclient{
           sendData(syncPacket.toString());
           System.out.println("3-way handshake initialized.");
           state = "sync_sent";
-
           communicationHandler(state);
       }
   }
@@ -78,7 +76,8 @@ public class UDPclient{
           } catch (FileNotFoundException e) {
               e.printStackTrace();
           }
-          while(true){
+          boolean completed = false;
+          while(!completed){
               byte[] buffer = new byte[maxPayload];
               DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
               if(stateN.equals("sync_sent")){
@@ -126,6 +125,7 @@ public class UDPclient{
                       System.out.println("Ready to accept file!!!");
                   }else{
                       try {
+                          socket.setSoTimeout(0);
                           socket.receive(packet);
                           System.out.println("Received a packet...must send ack!!!");
                           ByteArrayInputStream inputStream = new ByteArrayInputStream(packet.getData());
@@ -142,8 +142,20 @@ public class UDPclient{
                               }else if(sequence_num == 0){
                                   sequence_num++;
                               }
+                          }else if(sequence_number==2){
+                              System.out.println("File has been transferred!!");
+                              int packetLength = in.readInt();
+                              byte[] data = new byte[packetLength];
+                              in.read(data);
+                              file.write(data);
+                              sendAck(sequence_number);
+                              completed = true;
+                              in.close();
+                              inputStream.close();
+                              file.close();
                           }else{
                               System.out.println("Packet is a duplicate...just send ack!!!");
+                              System.out.println(sequence_number);
                               sendAck(sequence_number);
                           }
                       } catch (IOException e) {
@@ -154,11 +166,7 @@ public class UDPclient{
                   }
               }
           }
-          /*try {
-              file.close();
-          } catch (IOException e) {
-              e.printStackTrace();
-          }*/
+
       });
       t.start();
   }
