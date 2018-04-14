@@ -14,7 +14,7 @@ public class ClientHandler extends Thread{
   private String ServerIP;
   private String state = "none";
   private int SYNC_NUM = 0,sequence_num=0;
-  private int maxPayload = 65000;
+  private int maxPayload = 1024;
 
   public ClientHandler(String ServerIP,int portNumber){
     this.ServerIP = ServerIP;
@@ -91,6 +91,8 @@ public class ClientHandler extends Thread{
       boolean send_again = false;
       int start=0;
       byte[] sendBuf = new byte[load];
+      int PacketCounter=0;
+      System.out.println("The file is: "+ buffer.length + " bytes!!");
       while (!file_sent){
           ByteArrayOutputStream stream = new ByteArrayOutputStream();
           DataOutputStream out = new DataOutputStream(stream);
@@ -113,7 +115,7 @@ public class ClientHandler extends Thread{
                   byte[] buf = stream.toByteArray();
                   DatagramPacket packet = new DatagramPacket(buf,buf.length,address,clientPort);
                   socket.send(packet);
-                  System.out.println(state);
+                  PacketCounter++;
                   state="wait_ack";
                   out.close();
                   stream.close();
@@ -125,13 +127,12 @@ public class ClientHandler extends Thread{
                   byte[] buf = stream.toByteArray();
                   DatagramPacket packet = new DatagramPacket(buf,buf.length,address,clientPort);
                   socket.send(packet);
-                  System.out.println(state);
+                  PacketCounter++;
                   state="wait_ack";
                   out.close();
                   stream.close();
               }
           }else if(state.equals("wait_ack")){
-              System.out.println(state);
               byte[] bufferReceive = new byte[maxPayload];
               DatagramPacket packet = new DatagramPacket(bufferReceive,bufferReceive.length);
               try{
@@ -144,10 +145,11 @@ public class ClientHandler extends Thread{
                       }else if(sequence_num == 0){
                           sequence_num++;
                       }
-                      System.out.println("Received ack");
+                      System.out.println("Received ack for packet #"+ PacketCounter);
                       state="packet_send";
                   }else if(p.getAckPacket() && p.getAckNum() == 2){
                       System.out.println("Received ack for last packet!!!");
+                      System.out.println("Total packets sent: " + PacketCounter);
                       file_sent = true;
                   }
               }catch (IOException e){

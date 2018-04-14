@@ -71,6 +71,7 @@ public class UDPclient{
           String stateN = state;
           boolean asked = true;
           FileOutputStream file = null;
+          int PacketCounter=0;
           try {
               file = new FileOutputStream("FTPresult");
           } catch (FileNotFoundException e) {
@@ -127,6 +128,7 @@ public class UDPclient{
                       try {
                           socket.setSoTimeout(0);
                           socket.receive(packet);
+                          PacketCounter++;
                           System.out.println("Received a packet...must send ack!!!");
                           ByteArrayInputStream inputStream = new ByteArrayInputStream(packet.getData());
                           DataInputStream in = new DataInputStream(inputStream);
@@ -144,6 +146,7 @@ public class UDPclient{
                               }
                           }else if(sequence_number==2){
                               System.out.println("File has been transferred!!");
+                              System.out.println("Total number of packets received: "+ PacketCounter);
                               int packetLength = in.readInt();
                               byte[] data = new byte[packetLength];
                               in.read(data);
@@ -175,7 +178,6 @@ public class UDPclient{
       Packet ack = new Packet();
       ack.setAckPacket(true);
       ack.setAckNum(ackNum);
-      System.out.println(ack.toString());
       sendData(ack.toString());
   }
 
