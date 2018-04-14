@@ -16,6 +16,7 @@ public class UDPclient{
   private DatagramSocket socket;
   private String state = null;
   private int sequence_num = 0;
+  private String extension="";
 
   public void initialize(String args[]) throws IOException {
       if(args.length == 0){
@@ -27,6 +28,7 @@ public class UDPclient{
           portNumber = Integer.parseInt(br.readLine());
           System.out.println("Give file name");
           fileName = br.readLine();
+          extension = fileName.substring(fileName.indexOf("."),fileName.length());
           System.out.println("Give file path");
           filePath = br.readLine();
           System.out.println("Give payload");
@@ -48,6 +50,7 @@ public class UDPclient{
           serverIP = args[0];
           portNumber = Integer.parseInt(args[1]);
           fileName = args[2];
+          extension = fileName.substring(fileName.indexOf("."),fileName.length());
           filePath = args[3];
           maxPayload = Integer.parseInt(args[4]);
           //get a Datagram socket
@@ -73,7 +76,7 @@ public class UDPclient{
           FileOutputStream file = null;
           int PacketCounter=0;
           try {
-              file = new FileOutputStream("FTPresult");
+              file = new FileOutputStream("FTPresult".concat(extension));
           } catch (FileNotFoundException e) {
               e.printStackTrace();
           }
