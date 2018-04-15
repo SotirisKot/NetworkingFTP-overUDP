@@ -19,8 +19,8 @@
       <file leaf-file-name="ClientHandler.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/Net/ClientHandler.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1">
-              <caret line="157" column="24" lean-forward="false" selection-start-line="157" selection-start-column="24" selection-end-line="157" selection-end-column="24" />
+            <state relative-caret-position="833">
+              <caret line="200" column="0" lean-forward="false" selection-start-line="200" selection-start-column="0" selection-end-line="200" selection-end-column="0" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -41,8 +41,8 @@
       <file leaf-file-name="UDPclient.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/Net/UDPclient.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="408">
-              <caret line="166" column="47" lean-forward="true" selection-start-line="166" selection-start-column="47" selection-end-line="166" selection-end-column="47" />
+            <state relative-caret-position="493">
+              <caret line="231" column="12" lean-forward="false" selection-start-line="231" selection-start-column="12" selection-end-line="231" selection-end-column="12" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -353,7 +353,14 @@
       <option name="project" value="LOCAL" />
       <updated>1523782528110</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Trying fixes">
+      <created>1523800197676</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1523800197676</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -365,7 +372,7 @@
       <window_info id="Palette&#9;" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32944608" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25560975" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25560975" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32944608" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
@@ -389,7 +396,8 @@
     <MESSAGE value="Edits" />
     <MESSAGE value="Added statistics at client side" />
     <MESSAGE value="Timeout" />
-    <option name="LAST_COMMIT_MESSAGE" value="Timeout" />
+    <MESSAGE value="Trying fixes" />
+    <option name="LAST_COMMIT_MESSAGE" value="Trying fixes" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager />
@@ -594,8 +602,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/Net/ClientHandler.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1">
-          <caret line="157" column="24" lean-forward="false" selection-start-line="157" selection-start-column="24" selection-end-line="157" selection-end-column="24" />
+        <state relative-caret-position="833">
+          <caret line="200" column="0" lean-forward="false" selection-start-line="200" selection-start-column="0" selection-end-line="200" selection-end-column="0" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
@@ -604,8 +612,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/Net/UDPclient.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="408">
-          <caret line="166" column="47" lean-forward="true" selection-start-line="166" selection-start-column="47" selection-end-line="166" selection-end-column="47" />
+        <state relative-caret-position="493">
+          <caret line="231" column="12" lean-forward="false" selection-start-line="231" selection-start-column="12" selection-end-line="231" selection-end-column="12" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>

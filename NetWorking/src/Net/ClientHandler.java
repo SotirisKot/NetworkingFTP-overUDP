@@ -147,7 +147,7 @@ public class ClientHandler extends Thread{
                       }else if(sequence_num == 0){
                           sequence_num++;
                       }
-                      //System.out.println("Received ack for packet #"+ PacketCounter);
+                      System.out.println("Received ack for packet #"+ PacketCounter);
                       state="packet_send";
                       send_again = false;
                   }else if(p.getAckPacket() && p.getAckNum() == 2){
@@ -155,7 +155,7 @@ public class ClientHandler extends Thread{
                       System.out.println("Total packets sent: " + PacketCounter);
                       file_sent = true;
                   }else{
-                      //System.out.println("Duplicate ack..Ignoring it!!!");
+                      System.out.println("Duplicate ack..Ignoring it!!!");
                       state = "wait_ack";
                   }
               }catch (IOException e){

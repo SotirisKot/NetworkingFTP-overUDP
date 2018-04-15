@@ -136,7 +136,7 @@ public class UDPclient{
                       }
                   }else{
                       try {
-                          LocalDateTime oldDate = LocalDateTime.now(Clock.systemDefaultZone());
+                          long startTime = System.nanoTime();
                           socket.setSoTimeout(0);
                           socket.receive(packet);
                           PacketCounter++;
@@ -168,8 +168,8 @@ public class UDPclient{
                               in.close();
                               inputStream.close();
                               file.close();
-                              LocalDateTime newDate = LocalDateTime.now(Clock.systemDefaultZone());
-                              getStatistics(oldDate,newDate,PacketCounter,maxPayload);
+                              long endTime = System.nanoTime();
+                              getStatistics(startTime,endTime,PacketCounter,maxPayload);
                           }else{
                               //System.out.println("Packet is a duplicate...just send ack!!!");
                               //System.out.println(sequence_number);
@@ -225,13 +225,13 @@ public class UDPclient{
       socket.send(p);
   }
 
-  private void getStatistics(LocalDateTime oldDate,LocalDateTime newDate,int PacketCounter,int maxPayload){
+  private void getStatistics(long startTime,long endTime,int PacketCounter,int maxPayload){
       long totalBytes = PacketCounter*maxPayload;
-      System.out.println(oldDate + "      " + newDate);
-      Duration duration = Duration.between(oldDate, newDate);
-      System.out.println(duration);
-      System.out.println("Total transfer time: " + duration.getSeconds()  + " seconds");
-      System.out.println("Transfer rate: " + totalBytes/duration.getSeconds() + " Kbyte/sec");
+      long totalTime = endTime - startTime;
+      double nanoTosec = totalTime*1e-9;
+      double transferRate = (totalBytes/nanoTosec)/1024;
+      System.out.println("Total transfer time: " + 1e-9 * totalTime + " seconds");
+      System.out.println("Transfer rate: " +  transferRate + " Kbyte/sec");
       System.out.println("Total number of UDP/IP packets received: " + PacketCounter);
       System.out.println("The payload was: "+ maxPayload);
   }
