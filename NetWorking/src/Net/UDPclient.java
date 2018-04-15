@@ -225,7 +225,7 @@ public class UDPclient{
   private void getStatistics(long startTime,long endTime,int PacketCounter,int maxPayload){
       long totalTime = endTime - startTime;
       double transfer_rate = ((PacketCounter*maxPayload)/1000)/60;
-      System.out.println("Total transfer rate: " + totalTime + " nanoseconds");
+      System.out.println("Total transfer time: " + totalTime + " nanoseconds");
       System.out.println("Transfer rate: " + transfer_rate + " Kbyte/sec");
       System.out.println("Total number of UDP/IP packets received: " + PacketCounter);
       System.out.println("The payload was: "+ maxPayload);
