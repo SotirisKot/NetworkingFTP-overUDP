@@ -18,7 +18,7 @@ public class UDPclient{
   private int sequence_num = 0;
   private String extension="";
 
-  public void initialize(String args[]) throws IOException {
+  private void initialize(String args[]) throws IOException {
       if(args.length == 0){
           System.out.println("Wrong Arguments!!!");
           BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -86,8 +86,6 @@ public class UDPclient{
               DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
               if(stateN.equals("sync_sent")){
                   try {
-                      //byte[] buffer = new byte[maxPayload];
-                      //DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
                       socket.receive(packet);
                       Packet p = Packet.processingData(new String(buffer));
                       System.out.println("Received: " + p.toString());
@@ -127,6 +125,11 @@ public class UDPclient{
                       }
                       asked = false;
                       System.out.println("Ready to accept file!!!");
+                      try {
+                          findTimeout();
+                      } catch (IOException e) {
+                          e.printStackTrace();
+                      }
                   }else{
                       try {
                           long startTime = System.nanoTime();
@@ -179,20 +182,30 @@ public class UDPclient{
       t.start();
   }
 
-  public void sendAck(int ackNum) throws IOException {
+  private void findTimeout() throws IOException {
+      byte[] buffer = new byte[maxPayload];
+      DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
+      socket.receive(packet);
+      Packet packetTimeout = new Packet();
+      packetTimeout.setAckPacket(true);
+      sendData(packetTimeout.toString());
+
+  }
+
+  private void sendAck(int ackNum) throws IOException {
       Packet ack = new Packet();
       ack.setAckPacket(true);
       ack.setAckNum(ackNum);
       sendData(ack.toString());
   }
 
-  public void sendData(String data) throws IOException {
+  private void sendData(String data) throws IOException {
       byte[] buffer = data.getBytes();
       DatagramPacket p = new DatagramPacket(buffer,buffer.length,address,portNumber);
       socket.send(p);
   }
 
-  public void getStatistics(long startTime,long endTime,int PacketCounter,int maxPayload){
+  private void getStatistics(long startTime,long endTime,int PacketCounter,int maxPayload){
       long totalTime = endTime - startTime;
       double transfer_rate = ((PacketCounter*maxPayload)/1000)/60;
       System.out.println("Total transfer rate: " + totalTime + " nanoseconds");

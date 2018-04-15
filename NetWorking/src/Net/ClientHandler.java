@@ -83,7 +83,7 @@ public class ClientHandler extends Thread{
   }
 
 
-  public void transferFile(byte[] buffer, InetAddress address, int clientPort) throws IOException {
+  private void transferFile(byte[] buffer, InetAddress address, int clientPort) throws IOException {
       String state = "packet_send";
       int load = maxPayload-8;
       boolean file_sent = false;
@@ -93,6 +93,9 @@ public class ClientHandler extends Thread{
       byte[] sendBuf = new byte[load];
       int PacketCounter=0;
       System.out.println("The file is: "+ buffer.length + " bytes!!");
+
+      int timeout = findTimeout(address,clientPort);
+      System.out.println("The timeout will be: " + timeout);
       while (!file_sent){
           ByteArrayOutputStream stream = new ByteArrayOutputStream();
           DataOutputStream out = new DataOutputStream(stream);
@@ -136,7 +139,7 @@ public class ClientHandler extends Thread{
               byte[] bufferReceive = new byte[maxPayload];
               DatagramPacket packet = new DatagramPacket(bufferReceive,bufferReceive.length);
               try{
-                  socket.setSoTimeout(5000);
+                  socket.setSoTimeout(timeout);
                   socket.receive(packet);
                   Packet p = Packet.processingData(new String(bufferReceive));
                   if(p.getAckPacket() && p.getAckNum() == sequence_num){
@@ -147,10 +150,14 @@ public class ClientHandler extends Thread{
                       }
                       System.out.println("Received ack for packet #"+ PacketCounter);
                       state="packet_send";
+                      send_again = false;
                   }else if(p.getAckPacket() && p.getAckNum() == 2){
                       System.out.println("Received ack for last packet!!!");
                       System.out.println("Total packets sent: " + PacketCounter);
                       file_sent = true;
+                  }else{
+                      System.out.println("Duplicate ack..Ignoring it!!!");
+                      state = "wait_ack";
                   }
               }catch (IOException e){
                   System.out.println("Timed out...must send packet again!!!");
@@ -161,16 +168,32 @@ public class ClientHandler extends Thread{
       }
   }
 
+  private int findTimeout(InetAddress address,int clientPort) throws IOException {
+      long startTime,endTime=0;
+      byte[] buf = new byte[maxPayload];
+      DatagramPacket packet = new DatagramPacket(buf,buf.length,address,clientPort);
+      socket.send(packet);
+      startTime = new Date().getTime();
+      byte[] bufferReceive = new byte[maxPayload];
+      DatagramPacket packetReceive = new DatagramPacket(bufferReceive,bufferReceive.length);
+      socket.receive(packetReceive);
+      Packet p = Packet.processingData(new String(bufferReceive));
+      if(p.getAckPacket()){
+          endTime = new Date().getTime();
+      }
+      System.out.println((endTime+ "    " +startTime));
+      return (int) (endTime - startTime);
+  }
 
-  public void sendAck(int ackNum,InetAddress address,int clientPort) throws IOException {
+  private void sendAck(int ackNum,InetAddress address,int clientPort) throws IOException {
       Packet ack = new Packet();
       ack.setAckPacket(true);
       ack.setAckNum(ackNum);
       sendData(ack.toString(),address,clientPort);
   }
 
-  
-  public void sendData(String data,InetAddress address,int clientPort) throws IOException {
+
+  private void sendData(String data,InetAddress address,int clientPort) throws IOException {
       byte[] buffer = data.getBytes();
       DatagramPacket p = new DatagramPacket(buffer,buffer.length,address,clientPort);
       socket.send(p);
