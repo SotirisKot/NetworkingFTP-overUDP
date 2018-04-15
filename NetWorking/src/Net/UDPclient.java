@@ -92,11 +92,12 @@ public class UDPclient{
                       if(p.getAckNum() == SYNC_NUM){//ack packet must be valid!!!
                           System.out.println("3-way handshake step 2...Now will send ack back to server to establish" +
                                   " connection!!!");
+                          causeDelay();
                           sendAck(p.getSynNum());
                           System.out.println("3-way handshake finished...connection established.");
                           stateN = "connection_established";
                       }
-                  } catch (IOException e) {
+                  } catch (IOException | InterruptedException e) {
                       e.printStackTrace();
                   }
               }else if(stateN.equals("connection_established")){
@@ -145,6 +146,7 @@ public class UDPclient{
                               byte[] data = new byte[packetLength];
                               in.read(data);
                               file.write(data);
+                              causeDelay();
                               sendAck(sequence_number);
                               if(sequence_num == 1){
                                   sequence_num--;
@@ -157,6 +159,7 @@ public class UDPclient{
                               byte[] data = new byte[packetLength];
                               in.read(data);
                               file.write(data);
+                              causeDelay();
                               sendAck(sequence_number);
                               completed = true;
                               in.close();
@@ -167,9 +170,10 @@ public class UDPclient{
                           }else{
                               System.out.println("Packet is a duplicate...just send ack!!!");
                               System.out.println(sequence_number);
+                              causeDelay();
                               sendAck(sequence_number);
                           }
-                      } catch (IOException e) {
+                      } catch (IOException | InterruptedException e) {
                           e.printStackTrace();
 
                       }
@@ -181,6 +185,19 @@ public class UDPclient{
       });
       t.start();
   }
+  public void causeDelay() throws InterruptedException {
+      double timeout = getTimeout();
+      long timeoutTime = (long) timeout;
+      //System.out.println("cast check \n double : " + timeout +" \n long : " + timeoutTime); //TODO erase comment
+      Thread.sleep(timeoutTime);
+  }
+
+
+    public double getTimeout() {
+        Random rand = new Random();
+        double lambda = 1/4.2;
+        return  Math.log(1-rand.nextDouble())/(-lambda);
+    }
 
   private void findTimeout() throws IOException {
       byte[] buffer = new byte[maxPayload];

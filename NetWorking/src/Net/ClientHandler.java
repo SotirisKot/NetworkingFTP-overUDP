@@ -182,7 +182,8 @@ public class ClientHandler extends Thread{
           endTime = new Date().getTime();
       }
       System.out.println((endTime+ "    " +startTime));
-      return (int) (endTime - startTime);
+
+      return (int) (endTime - (startTime - 10)); //10ms manual timeout x-(x-5) = 10 sothrh
   }
 
   private void sendAck(int ackNum,InetAddress address,int clientPort) throws IOException {
