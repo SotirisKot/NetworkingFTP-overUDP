@@ -2,6 +2,9 @@ package Net;
 
 import java.io.*;
 import java.net.*;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 
 public class UDPclient{
@@ -133,11 +136,11 @@ public class UDPclient{
                       }
                   }else{
                       try {
-                          long startTime = System.nanoTime();
+                          LocalDateTime oldDate = LocalDateTime.now(Clock.systemDefaultZone());
                           socket.setSoTimeout(0);
                           socket.receive(packet);
                           PacketCounter++;
-                          System.out.println("Received a packet...must send ack!!!");
+                          //System.out.println("Received a packet...must send ack!!!");
                           ByteArrayInputStream inputStream = new ByteArrayInputStream(packet.getData());
                           DataInputStream in = new DataInputStream(inputStream);
                           int sequence_number = in.readInt();
@@ -165,11 +168,11 @@ public class UDPclient{
                               in.close();
                               inputStream.close();
                               file.close();
-                              long endTime = System.nanoTime();
-                              getStatistics(startTime,endTime,PacketCounter,maxPayload);
+                              LocalDateTime newDate = LocalDateTime.now(Clock.systemDefaultZone());
+                              getStatistics(oldDate,newDate,PacketCounter,maxPayload);
                           }else{
-                              System.out.println("Packet is a duplicate...just send ack!!!");
-                              System.out.println(sequence_number);
+                              //System.out.println("Packet is a duplicate...just send ack!!!");
+                              //System.out.println(sequence_number);
                               causeDelay();
                               sendAck(sequence_number);
                           }
@@ -193,11 +196,11 @@ public class UDPclient{
   }
 
 
-    public double getTimeout() {
-        Random rand = new Random();
-        double lambda = 1/4.2;
-        return  Math.log(1-rand.nextDouble())/(-lambda);
-    }
+  public double getTimeout() {
+      Random rand = new Random();
+      double lambda = 1/4.2;
+      return  Math.log(1-rand.nextDouble())/(-lambda);
+  }
 
   private void findTimeout() throws IOException {
       byte[] buffer = new byte[maxPayload];
@@ -222,11 +225,13 @@ public class UDPclient{
       socket.send(p);
   }
 
-  private void getStatistics(long startTime,long endTime,int PacketCounter,int maxPayload){
-      long totalTime = endTime - startTime;
-      double transfer_rate = ((PacketCounter*maxPayload)/1000)/60;
-      System.out.println("Total transfer time: " + totalTime + " nanoseconds");
-      System.out.println("Transfer rate: " + transfer_rate + " Kbyte/sec");
+  private void getStatistics(LocalDateTime oldDate,LocalDateTime newDate,int PacketCounter,int maxPayload){
+      long totalBytes = PacketCounter*maxPayload;
+      System.out.println(oldDate + "      " + newDate);
+      Duration duration = Duration.between(oldDate, newDate);
+      System.out.println(duration);
+      System.out.println("Total transfer time: " + duration.getSeconds()  + " seconds");
+      System.out.println("Transfer rate: " + totalBytes/duration.getSeconds() + " Kbyte/sec");
       System.out.println("Total number of UDP/IP packets received: " + PacketCounter);
       System.out.println("The payload was: "+ maxPayload);
   }
