@@ -9,6 +9,8 @@ import java.util.*;
 
 public class UDPclient{
 
+    private boolean startClock = true;
+    private long startTime= 0;
   private String serverIP;
   private int portNumber;
   private String fileName;
@@ -136,7 +138,11 @@ public class UDPclient{
                       }
                   }else{
                       try {
-                          long startTime = System.nanoTime();
+                          if(startClock) {
+                              startTime = System.nanoTime();
+                              System.out.println(startTime + " NSEC");
+                              startClock = false;
+                          }
                           socket.setSoTimeout(0);
                           socket.receive(packet);
                           PacketCounter++;
@@ -169,6 +175,7 @@ public class UDPclient{
                               inputStream.close();
                               file.close();
                               long endTime = System.nanoTime();
+                              System.out.println(endTime +" NSEC" +"\n diff "+ (endTime - startTime));
                               getStatistics(startTime,endTime,PacketCounter,maxPayload);
                           }else{
                               //System.out.println("Packet is a duplicate...just send ack!!!");
