@@ -9,81 +9,80 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class ClientHandler extends Thread{
-  private DatagramSocket socket = null;
-  private int portNumber;
-  private String ServerIP;
-  private String state = "none";
-  private int SYNC_NUM = 0,sequence_num=0;
-  private int maxPayload = 1024;
+    private String filePath;
+    private String fileName,extension;
+    private DatagramSocket socket = null;
+    private int portNumber;
+     private InetAddress address;
+    private String state = "none";
+    private int SYNC_NUM = 0,sequence_num=0;
+    private int maxPayload;
+    private int PacketCounter;
 
-  public ClientHandler(String ServerIP,int portNumber){
-    this.ServerIP = ServerIP;
+  public ClientHandler(InetAddress address, int portNumber, String filePath, String fileName, String extension, int maxPayload){
+    this.address = address;
     this.portNumber = portNumber;
+    this.filePath = filePath;
+    this.fileName = fileName;
+    this.extension = extension;
+    this.maxPayload = maxPayload;
   }
 
-  public void run(){
+  public void run() {
+      Packet syncPacket = new Packet();
+      syncPacket.setSynPacket(true);
+      syncPacket.setSynNum(SYNC_NUM);
+      syncPacket.setData(Integer.toString(maxPayload));
       try {
-          socket = new DatagramSocket(portNumber);
-      }catch (SocketException e) {
+          socket = new DatagramSocket();
+          sendData(syncPacket.toString());
+      } catch (IOException e) {
           e.printStackTrace();
       }
-      while(true){
-          byte[] buf = new byte[maxPayload];
-          DatagramPacket packet = new DatagramPacket(buf, buf.length);
-          System.out.println("Waiting for a request!!!");
-          try {
-              socket.receive(packet);
-              System.out.println("Got a request!!!");
-              Packet p = Packet.processingData(new String(buf));
-              InetAddress clientAddress = packet.getAddress();
-              int clientPort = packet.getPort();
-              if(state.equals("none")){//we wait for a syn packet..to start the handshake...
-                  if(p.getSynPacket()){
-                      System.out.println("Client initialized 3-way handshake!!!");
-                      Packet response = new Packet();
-                      response.setSynPacket(true);
-                      response.setAckPacket(true);
-                      response.setSynNum(SYNC_NUM);
-                      response.setAckNum(p.getSynNum());
-                      sendData(response.toString(),clientAddress,clientPort);
-                      state = "syn_received";
-                      System.out.println("3-way handshake step 2: sent ack-syn packet waiting for ack...");
+      System.out.println("3-way handshake initialized.");
+      state = "sync_sent";
+      boolean complete = false;
+      while (!complete) {
+          byte[] buffer = new byte[maxPayload];
+          DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+          if (state.equals("sync_sent")) {
+              try {
+                  socket.receive(packet);
+                  Packet p = Packet.processingData(new String(buffer));
+                  System.out.println("Received: " + p.toString());
+                  if (p.getAckNum() == SYNC_NUM) {//ack packet must be valid!!!
+                      System.out.println("3-way handshake step 2...Now will send ack back to server to establish" +
+                              " connection!!!");
+                      //causeDelay();
+                      sendAck(p.getSynNum());
+                      System.out.println("3-way handshake finished...connection established.");
+                      state = "connection_established";
                   }
-              }else if(state.equals("syn_received")){
-                  if(p.getAckPacket() && p.getAckNum() == SYNC_NUM){
-                      state = "established";
-                      System.out.println("3-way handshake completed...CONNECTION ESTABLISHED!!!");
-                  }
-              }else if(state.equals("established")){
-                  //if packet is valid..opening the file and converting it to byte array so we can send it to client.
-                  if(p.isDataPacket() && p.getSequence_num() == sequence_num){//packet is valid
-                      String filepath = p.getData();
-                      System.out.println(filepath);
-                      Path path = Paths.get(filepath);
-                      byte[] buffer = Files.readAllBytes(path);
-                      //now must send an ack..to tell the client that we received the file request.
-                      sendAck(p.getSequence_num(),clientAddress,clientPort);
-                      sequence_num++;
-                      try {
-                          System.out.println("Starting transferring file!!!");
-                          transferFile(buffer,clientAddress,clientPort);
-                          System.out.println("File has been transferred");
-                          state = "none";
-                          sequence_num = 0;
-                          socket.setSoTimeout(0);
-                      } catch (IOException e) {
-                          e.printStackTrace();
-                      }
-                  }
+              } catch (IOException e) {
+                  e.printStackTrace();
               }
-          } catch (IOException e) {
-              System.out.println("No requests have been made...");
+          } else if (state.equals("connection_established")) {
+
+              Path path = Paths.get(filePath);
+              try {
+                  byte[] buf = Files.readAllBytes(path);
+                  long startTime = System.nanoTime();
+                  System.out.println(startTime + " NSEC");
+                  transferFile(buf, address, portNumber);
+                  long endTime = System.nanoTime();
+                  System.out.println(endTime + " NSEC" + "\n diff " + (endTime - startTime));
+                  getStatistics(startTime, endTime, PacketCounter, maxPayload);
+                  complete = true;
+              } catch (IOException e) {
+                  e.printStackTrace();
+              }
+
           }
+
       }
   }
 
-
-  private void transferFile(byte[] buffer, InetAddress address, int clientPort) throws IOException {
+  private void transferFile(byte[] buffer, InetAddress address, int portNumber) throws IOException {
       String state = "packet_send";
       int load = maxPayload-8;
       boolean file_sent = false;
@@ -91,9 +90,8 @@ public class ClientHandler extends Thread{
       boolean send_again = false;
       int start=0;
       byte[] sendBuf = new byte[load];
-      int PacketCounter=0;
       System.out.println("The file is: "+ buffer.length + " bytes!!");
-      int timeout = findTimeout(address,clientPort);
+      int timeout = 1500;
       System.out.println("The timeout will be: " + timeout);
       while (!file_sent){
           ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -115,7 +113,7 @@ public class ClientHandler extends Thread{
                   out.write(sendBuf);
                   out.flush();
                   byte[] buf = stream.toByteArray();
-                  DatagramPacket packet = new DatagramPacket(buf,buf.length,address,clientPort);
+                  DatagramPacket packet = new DatagramPacket(buf,buf.length,address,portNumber);
                   socket.send(packet);
                   PacketCounter++;
                   state="wait_ack";
@@ -127,7 +125,7 @@ public class ClientHandler extends Thread{
                   out.write(sendBuf);
                   out.flush();
                   byte[] buf = stream.toByteArray();
-                  DatagramPacket packet = new DatagramPacket(buf,buf.length,address,clientPort);
+                  DatagramPacket packet = new DatagramPacket(buf,buf.length,address,portNumber);
                   socket.send(packet);
                   PacketCounter++;
                   state="wait_ack";
@@ -135,12 +133,14 @@ public class ClientHandler extends Thread{
                   stream.close();
               }
           }else if(state.equals("wait_ack")){
-              byte[] bufferReceive = new byte[maxPayload];
-              DatagramPacket packet = new DatagramPacket(bufferReceive,bufferReceive.length);
+              byte[] bufferReceive = new byte[1024];
+              DatagramPacket packetAck = new DatagramPacket(bufferReceive,bufferReceive.length);
               try{
                   socket.setSoTimeout(timeout);
-                  socket.receive(packet);
+                  socket.receive(packetAck);
+                  System.out.println(sequence_num + " gamwww");
                   Packet p = Packet.processingData(new String(bufferReceive));
+
                   if(p.getAckPacket() && p.getAckNum() == sequence_num){
                       if(sequence_num == 1){
                           sequence_num--;
@@ -167,36 +167,28 @@ public class ClientHandler extends Thread{
       }
   }
 
-  private int findTimeout(InetAddress address,int clientPort) throws IOException {
-      long startTime,endTime=0;
-      byte[] buf = new byte[maxPayload];
-      DatagramPacket packet = new DatagramPacket(buf,buf.length,address,clientPort);
-      socket.send(packet);
-      startTime = new Date().getTime();
-      byte[] bufferReceive = new byte[maxPayload];
-      DatagramPacket packetReceive = new DatagramPacket(bufferReceive,bufferReceive.length);
-      socket.receive(packetReceive);
-      Packet p = Packet.processingData(new String(bufferReceive));
-      if(p.getAckPacket()){
-          endTime = new Date().getTime();
-      }
-      System.out.println((endTime+ "    " +startTime));
 
-      return (int) (endTime - (startTime - 10)); //10ms manual timeout x-(x-5) = 10 sothrh
-  }
+    private void sendData(String data) throws IOException {
+        byte[] buffer = data.getBytes();
+        DatagramPacket p = new DatagramPacket(buffer,buffer.length,address,portNumber);
+        socket.send(p);
+    }
 
-  private void sendAck(int ackNum,InetAddress address,int clientPort) throws IOException {
-      Packet ack = new Packet();
-      ack.setAckPacket(true);
-      ack.setAckNum(ackNum);
-      sendData(ack.toString(),address,clientPort);
-  }
+    private void getStatistics(long startTime,long endTime,int PacketCounter,int maxPayload){
+        long totalBytes = PacketCounter*maxPayload;
+        long totalTime = endTime - startTime;
+        double nanoTosec = totalTime*1e-9;
+        double transferRate = (totalBytes/nanoTosec)/1024;
+        System.out.println("Total transfer time: " + 1e-9 * totalTime + " seconds");
+        System.out.println("Transfer rate: " +  transferRate + " Kbyte/sec");
+        System.out.println("Total number of UDP/IP packets received: " + PacketCounter);
+        System.out.println("The payload was: "+ maxPayload);
+    }
 
-
-  private void sendData(String data,InetAddress address,int clientPort) throws IOException {
-      byte[] buffer = data.getBytes();
-      DatagramPacket p = new DatagramPacket(buffer,buffer.length,address,clientPort);
-      socket.send(p);
-  }
-
+    private void sendAck(int ackNum) throws IOException {
+        Packet ack = new Packet();
+        ack.setAckPacket(true);
+        ack.setAckNum(ackNum);
+        sendData(ack.toString());
+    }
 }
