@@ -30,7 +30,6 @@ public class Client {
       boolean input = false;
 
       if(args.length == 0){
-          System.out.println("Wrong Arguments!!!");
           BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
           System.out.println("Give server ip: ");
           serverIP = br.readLine();

@@ -24,6 +24,8 @@ public class ClientHandler extends Thread{
     private int maxPayload;
     private int defaultPayload = 1024; //έχουμε θέσει εμείς default μέγεθος του buffer που θα αποθηκεύει τα πακέτα ack,syn_ack,sync
     private int PacketCounter;
+    private int DuplicateCounter;
+    private int TimedOutPacketCounter;
 
   public ClientHandler(InetAddress address, int portNumber, String filePath, String fileName, String extension, int maxPayload){
     this.address = address;
@@ -84,7 +86,7 @@ public class ClientHandler extends Thread{
                   long endTime = System.nanoTime();
                   System.out.println(endTime + " NSEC" + "\n diff " + (endTime - startTime));
                   //Παράγουμε στατιστικά με βάση το χρόνο μεταφοράς αριθμό πακέτων που στάλθηκαν και το payload του χρήστη.
-                  getStatistics(startTime, endTime, PacketCounter, maxPayload);
+                  getStatistics(startTime, endTime, PacketCounter,TimedOutPacketCounter,DuplicateCounter, maxPayload);
                   complete = true;
               } catch (IOException e) {
                   e.printStackTrace();
@@ -179,13 +181,16 @@ public class ClientHandler extends Thread{
                   }else if(p.getAckPacket() && p.getAckNum() == 2){
                       System.out.println("Received ack for last packet!!!");
                       System.out.println("Total packets sent: " + PacketCounter);
+
                       file_sent = true;
                   }else{
                       System.out.println("Duplicate ack..Ignoring it!!!");
+                      DuplicateCounter++;
                       state = "wait_ack";
                   }
               }catch (IOException e){
                   System.out.println("Timed out...must send packet again!!!");
+                  TimedOutPacketCounter++;
                   state="packet_send";
                   send_again = true;
               }
@@ -201,7 +206,7 @@ public class ClientHandler extends Thread{
     }
 
     //getStatistics: Παράγουμε στατιστικά για το σύνολο των πακέτων που μεταφέρθηκαν , το χρόνο που έκαναν να σταλούν και το payload του χρήστη
-    private void getStatistics(long startTime,long endTime,int PacketCounter,int maxPayload){
+    private void getStatistics(long startTime,long endTime,int PacketCounter,int DuplicateCounter,int timedOutPacketCounter,int maxPayload){
         long totalBytes = PacketCounter*maxPayload;
         long totalTime = endTime - startTime;
         double nanoTosec = totalTime*1e-9;
@@ -209,6 +214,8 @@ public class ClientHandler extends Thread{
         System.out.println("Total transfer time: " + 1e-9 * totalTime + " seconds");
         System.out.println("Transfer rate: " +  transferRate + " Kbyte/sec");
         System.out.println("Total number of UDP/IP packets received: " + PacketCounter);
+        System.out.println("Total duplicates sent: " + DuplicateCounter);
+        System.out.println("Total packets timed out: " + timedOutPacketCounter);
         System.out.println("The payload was: "+ maxPayload);
     }
 
