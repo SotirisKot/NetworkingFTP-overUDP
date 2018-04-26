@@ -6,6 +6,14 @@ import java.net.InetAddress;
 
 import static java.lang.System.exit;
 
+/*
+* Client class: Η κλάση αυτή είναι ο client μας ο οποίος κάνει connect στον server. Ο χρήστης θα δίνει
+* την Ip του server, το PortNumber καθως επισής και το όνομα και την διαδρομή του αρχείου που θέλουμε να στείλουμε στον server.
+* Τέλος ο χρήστης δίνει και το payload με το οποίο θέλει να γίνει η μεταφορά του αρχείου.
+* Όταν ολοκληρωθεί η είσοδος των στοιχείων ο client ξεκινάει την client handler η οποία βοηθάει στη μεταφορά των αρχείων
+* απο και προς των Client.
+* */
+
 public class Client {
 
 
@@ -22,7 +30,6 @@ public class Client {
       boolean input = false;
 
       if(args.length == 0){
-          System.out.println("Wrong Arguments!!!");
           BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
           System.out.println("Give server ip: ");
           serverIP = br.readLine();
