@@ -17,6 +17,7 @@ public class ClientHandler extends Thread{
     private String state = "none";
     private int SYNC_NUM = 0,sequence_num=0;
     private int maxPayload;
+    private int defaultPayload = 1024;
     private int PacketCounter;
 
   public ClientHandler(InetAddress address, int portNumber, String filePath, String fileName, String extension, int maxPayload){
@@ -43,7 +44,7 @@ public class ClientHandler extends Thread{
       state = "sync_sent";
       boolean complete = false;
       while (!complete) {
-          byte[] buffer = new byte[maxPayload];
+          byte[] buffer = new byte[defaultPayload];
           DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
           if (state.equals("sync_sent")) {
               try {
@@ -92,7 +93,7 @@ public class ClientHandler extends Thread{
       byte[] sendBuf = new byte[load];
       System.out.println("The file is: "+ buffer.length + " bytes!!");
       int timeout = 1500;
-      System.out.println("The timeout will be: " + timeout);
+      System.out.println("The timeout will be: " + timeout + "ms");
       while (!file_sent){
           ByteArrayOutputStream stream = new ByteArrayOutputStream();
           DataOutputStream out = new DataOutputStream(stream);
@@ -133,7 +134,7 @@ public class ClientHandler extends Thread{
                   stream.close();
               }
           }else if(state.equals("wait_ack")){
-              byte[] bufferReceive = new byte[1024];
+              byte[] bufferReceive = new byte[defaultPayload];
               DatagramPacket packetAck = new DatagramPacket(bufferReceive,bufferReceive.length);
               try{
                   socket.setSoTimeout(timeout);
@@ -146,7 +147,6 @@ public class ClientHandler extends Thread{
                       }else if(sequence_num == 0){
                           sequence_num++;
                       }
-                      System.out.println("Received ack for packet #"+ PacketCounter);
                       state="packet_send";
                       send_again = false;
                   }else if(p.getAckPacket() && p.getAckNum() == 2){
