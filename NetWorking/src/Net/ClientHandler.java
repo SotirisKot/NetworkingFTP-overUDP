@@ -53,7 +53,7 @@ public class ClientHandler extends Thread{
                   if (p.getAckNum() == SYNC_NUM) {//ack packet must be valid!!!
                       System.out.println("3-way handshake step 2...Now will send ack back to server to establish" +
                               " connection!!!");
-                      //causeDelay();
+
                       sendAck(p.getSynNum());
                       System.out.println("3-way handshake finished...connection established.");
                       state = "connection_established";
@@ -138,7 +138,6 @@ public class ClientHandler extends Thread{
               try{
                   socket.setSoTimeout(timeout);
                   socket.receive(packetAck);
-                  System.out.println(sequence_num + " gamwww");
                   Packet p = Packet.processingData(new String(bufferReceive));
 
                   if(p.getAckPacket() && p.getAckNum() == sequence_num){
