@@ -58,7 +58,7 @@ public class Client {
           serverIP = args[0];
           portNumber = Integer.parseInt(args[1]);
           fileName = args[2];
-          extension = fileName.substring(fileName.indexOf("."),fileName.length());
+          //extension = fileName.substring(fileName.indexOf("."),fileName.length());
           filePath = args[3];
           try {
               maxPayload = Integer.parseInt(args[4]);
@@ -83,7 +83,7 @@ public class Client {
       }
 
       //Kanoume concat to file name kai to file path tou arxeioy poy peirame!
-      finalPath = filePath.concat("\\").concat(fileName);
+      finalPath = filePath.concat(fileName);
       //Vlepoume to extension tou file pou dwsame ws input wste to file pou 8a exoume san output na exei to idio extension
       extension = fileName.substring(fileName.indexOf("."),fileName.length());
 
